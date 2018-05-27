@@ -41,7 +41,8 @@ addUser = user => {
 }
 
 filterChange = e => {
-    this.setState({roleFilter: e.target.value});
+  this.setState({searchValue: ''});
+  this.setState({roleFilter: e.target.value});
 }
 
 handleChange(e) {
