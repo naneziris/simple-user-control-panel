@@ -1,33 +1,33 @@
 // This is just some sample data so you don't have to think of your own!
 const users = {
   user1: {
-    username: "test1",
-    firstName: "firstName1",
-    lastName: "lastName1",
+    username: "nikosUser",
+    firstName: "nikos",
+    lastName: "user1",
     role: "admin",
     enabled: true
   },
 
   user2: {
-    username: "test2",
-    firstName: "firstName2",
-    lastName: "lastName2",
+    username: "vaggelisUser",
+    firstName: "vaggelis",
+    lastName: "user2",
     role: "user",
     enabled: true
   },
 
   user3: {
-    username: "test3",
-    firstName: "firstName3",
-    lastName:"lastName3",
+    username: "giorgosUser",
+    firstName: "giorgos",
+    lastName:"user3",
     role: "user",
     enabled: true
   },
 
   user4: {
-    username: "test4",
-    firstName: "firstName4",
-    lastName:"lastName4",
+    username: "vasilisUser",
+    firstName: "vasilis",
+    lastName:"user4",
     role: "user",
     enabled: true
   }
