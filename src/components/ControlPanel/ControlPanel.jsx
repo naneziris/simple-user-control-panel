@@ -1,5 +1,4 @@
 import React from 'react';
-import { render } from 'react-dom';
 import './ControlPanel.scss';
 import users from '../../sample-users.js';
 import UserEntry from '../UserEntry';

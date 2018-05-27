@@ -1,5 +1,4 @@
 import React from 'react';
-import { render } from 'react-dom';
 import PropTypes from 'prop-types';
 
 class UserEntry extends React.Component  {
@@ -45,7 +44,7 @@ class UserEntry extends React.Component  {
   }
 
   render () {
-    const { username, firstName, lastName, role, isEnabled, id } = this.props;
+    const { username, firstName, lastName, role, isEnabled } = this.props;
       return (
         <tr>
           <td><input type="text" ref={this.usernameRef} defaultValue={username}/></td>
@@ -58,7 +57,7 @@ class UserEntry extends React.Component  {
             </select>
           </td>
           <td>
-            <select name="status" ref={this.statusRef} className="custom-select d-block w-100" defaultValue={this.props.isEnabled ? 'true' : 'false'}>
+            <select name="status" ref={this.statusRef} className="custom-select d-block w-100" defaultValue={isEnabled ? 'true' : 'false'}>
               <option value="true">true</option>
               <option value="false">false</option>
             </select>
