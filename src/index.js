@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from 'react-dom';
 import './index.css';
-import ControlPanel from './components/ControlPanel/ControlPanel.jsx'
+import App from './components/App.js'
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 
-render(<ControlPanel />, document.querySelector('#root'));
+render(<App />, document.querySelector('#root'));

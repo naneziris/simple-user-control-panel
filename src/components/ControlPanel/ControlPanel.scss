@@ -1,52 +1,8 @@
-.control-panel {
-  padding: 0 20px;
+.btn {
+  margin: 5px;
 }
 
-.filter-box {
-  display: block;
-  &__item {
-    display: inline-block;
-  }
-  &__search {
-    display: inline-block;
-  }
-  &__dropdown {
-    display: inline-block;
-  }
-}
-
-.dropdown {
-  display: block;
-  &__option {
-    display: inline-block;
-  }
-}
-
-.users {
-  display: block;
-  &__item {
-    display: inline-block;
-  }
-  &__wrapper {
-    display: inline-block;
-  }
-}
-
-.user {
-  display: block;
-  &__info {
-    display: inline-block;
-  }
-  &__control {
-    display: inline-block;
-  }
-  &__button {
-    display: inline-block;
-    &--green {
-      background-color: green;
-    }
-    &--red {
-      background-color: red;
-    }
-  }
+.table td,
+.table th {
+  vertical-align: middle !important;
 }
