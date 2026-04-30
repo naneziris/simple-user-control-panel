@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Initiative Training Scheduler</title>
+
+  <style>
+    /*
+    ================================================================
+      INITIATIVE TRAINING SCHEDULER — Stylesheet
+      All rules are scoped under `.its-app` to prevent bleeding
+      into SharePoint's global CSS. No external dependencies.
+    ================================================================
+    */
+
+    /* ── Reset scoped to app root ── */
+    .its-app *, .its-app *::before, .its-app *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Design Tokens ── */
+    .its-app {
+      --c-primary:        #4f46e5;
+      --c-primary-hover:  #4338ca;
+      --c-primary-light:  #eef2ff;
+      --c-primary-mid:    #c7d2fe;
+      --c-danger:         #dc2626;
+      --c-danger-light:   #fef2f2;
+      --c-danger-border:  #fca5a5;
+      --c-today:          #2563eb;
+      --c-success:        #16a34a;
+      --c-surface:        #ffffff;
+      --c-surface-2:      #f9fafb;
+      --c-surface-3:      #f3f4f6;
+      --c-border:         #e5e7eb;
+      --c-border-strong:  #d1d5db;
+      --c-text:           #111827;
+      --c-text-2:         #374151;
+      --c-text-muted:     #6b7280;
+      --c-text-faint:     #9ca3af;
+
+      --label-w:     150px;   /* sticky group label column width  */
+      --row-h:        62px;   /* gantt row height                 */
+      --hdr-month-h:  36px;   /* month header row height          */
+      --hdr-week-h:   26px;   /* week header row height           */
+      --hdr-h:        62px;   /* total header height (sum above)  */
+      --px-per-day:   25px;   /* horizontal scale: pixels per day */
+      --bar-h:        34px;   /* height of a gantt bar            */
+      --radius:          6px;
+
+      --shadow-sm:  0 1px 2px rgba(0,0,0,.07);
+      --shadow-md:  0 2px 8px rgba(0,0,0,.10), 0 1px 3px rgba(0,0,0,.06);
+      --shadow-lg:  0 10px 24px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--c-text);
+      background: var(--c-surface-2);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════════════════════════════════════════
+       WARNING BANNER
+    ════════════════════════════════════════ */
+    .its-banner {
+      background: linear-gradient(90deg, #7f1d1d 0%, #991b1b 100%);
+      color: #fef2f2;
+      padding: 11px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      line-height: 1.5;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .its-banner-icon { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+    .its-banner strong { font-weight: 700; }
+    .its-banner code {
+      background: rgba(255,255,255,0.15);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    /* ════════════════════════════════════════
+       TOP BAR
+    ════════════════════════════════════════ */
+    .its-topbar {
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      z-index: 50;
+    }
+    .its-brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+    .its-brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--c-primary-light);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .its-brand-icon svg { display: block; }
+    .its-brand-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--c-primary);
+      letter-spacing: -0.01em;
+    }
+    .its-brand-sub {
+      font-size: 11px;
+      color: var(--c-text-muted);
+      margin-top: 1px;
+      letter-spacing: 0.02em;
+    }
+    .its-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* ════════════════════════════════════════
+       TOOLBAR (legend + controls)
+    ════════════════════════════════════════ */
+    .its-toolbar {
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      padding: 0 24px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .its-legend {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .its-legend-heading {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--c-text-muted);
+    }
+    .its-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--c-text-2);
+    }
+    .its-swatch {
+      width: 26px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .its-swatch-line {
+      width: 3px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════
+       BUTTONS
+    ════════════════════════════════════════ */
+    .its-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      height: 34px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: background 0.14s, box-shadow 0.14s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .its-btn:active { transform: scale(0.97); }
+
+    .its-btn-primary {
+      background: var(--c-primary);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(79,70,229,0.35);
+    }
+    .its-btn-primary:hover { background: var(--c-primary-hover); box-shadow: 0 2px 6px rgba(79,70,229,0.4); }
+
+    .its-btn-ghost {
+      background: transparent;
+      color: var(--c-text-2);
+      border: 1.5px solid var(--c-border);
+    }
+    .its-btn-ghost:hover { background: var(--c-surface-3); border-color: var(--c-border-strong); }
+
+    .its-btn-copy {
+      background: var(--c-surface);
+      color: var(--c-primary);
+      border: 1.5px solid var(--c-primary-mid);
+    }
+    .its-btn-copy:hover { background: var(--c-primary-light); }
+
+    /* ════════════════════════════════════════
+       CONFLICT BADGE (top bar)
+    ════════════════════════════════════════ */
+    .its-conflict-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 10px;
+      height: 28px;
+      border-radius: 14px;
+      background: var(--c-danger-light);
+      border: 1px solid var(--c-danger-border);
+      color: var(--c-danger);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .its-conflict-pill[hidden] { display: none; }
+
+    /* ════════════════════════════════════════
+       GANTT — SCROLL CONTAINER
+    ════════════════════════════════════════ */
+    .its-gantt-wrap {
+      overflow: auto;
+      background: var(--c-surface);
+      border-bottom: 1px solid var(--c-border);
+      position: relative;
+      /* Max height = header + 6 rows + a little breathing room */
+      max-height: calc(var(--hdr-h) + 6 * var(--row-h) + 2px);
+    }
+    .its-gantt-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+    .its-gantt-wrap::-webkit-scrollbar-track { background: var(--c-surface-3); }
+    .its-gantt-wrap::-webkit-scrollbar-thumb { background: var(--c-border-strong); border-radius: 4px; }
+    .its-gantt-wrap::-webkit-scrollbar-thumb:hover { background: var(--c-text-muted); }
+
+    /* Inner canvas — width set via JS */
+    .its-gantt-canvas {
+      position: relative;
+      /* min-width injected by JS */
+    }
+
+    /* ── Sticky Header Row ── */
+    .its-gantt-hdr {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      background: var(--c-surface);
+      border-bottom: 2px solid var(--c-border-strong);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    /* Corner spacer (label column, sticky left inside sticky top) */
+    .its-corner {
+      flex-shrink: 0;
+      width: var(--label-w);
+      height: var(--hdr-h);
+      position: sticky;
+      left: 0;
+      z-index: 41;
+      background: var(--c-surface);
+      border-right: 2px solid var(--c-border-strong);
+      display: flex;
+      align-items: flex-end;
+      padding: 0 14px 8px 16px;
+    }
+    .its-corner-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--c-text-faint);
+    }
+
+    /* Timeline head — contains month + week rows */
+    .its-timeline-hdr {
+      display: flex;
+      flex-direction: column;
+      /* width set via JS */
+      flex-shrink: 0;
+    }
+
+    /* Month row */
+    .its-month-row {
+      display: flex;
+      height: var(--hdr-month-h);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .its-month-cell {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--c-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-right: 1px solid var(--c-border);
+      /* width injected inline */
+    }
+
+    /* Week row */
+    .its-week-row {
+      display: flex;
+      height: var(--hdr-week-h);
+    }
+    .its-week-cell {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: var(--c-text-muted);
+      border-right: 1px solid #f0f0f0;
+      /* width injected inline */
+    }
+
+    /* ── Group Rows ── */
+    .its-gantt-row {
+      display: flex;
+      height: var(--row-h);
+      border-bottom: 1px solid var(--c-border);
+    }
+    .its-gantt-row:last-child { border-bottom: none; }
+
+    /* Sticky label */
+    .its-group-lbl {
+      flex-shrink: 0;
+      width: var(--label-w);
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      background: var(--c-surface);
+      border-right: 2px solid var(--c-border-strong);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 9px;
+    }
+    .its-group-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .its-group-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--c-text-2);
+    }
+    .its-group-count {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--c-text-faint);
+      background: var(--c-surface-3);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Row content (bars live here) */
+    .its-row-content {
+      position: relative;
+      flex-shrink: 0;
+      height: 100%;
+      /* width injected inline */
+    }
+    /* Alternating row background */
+    .its-gantt-row:nth-child(even) .its-row-content {
+      background: #fafafa;
+    }
+    /* Week grid lines — width driven by CSS custom property set inline by JS.
+       Default 175px = 7 days × 25px (normal mode).                         */
+    .its-row-content::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent calc(var(--week-grid, 175px) - 1px),
+        #ececec    calc(var(--week-grid, 175px) - 1px),
+        #ececec    var(--week-grid, 175px)
+      );
+      pointer-events: none;
+    }
+    /* Empty row hint */
+    .its-empty-hint {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: #d1d5db;
+      pointer-events: none;
+      white-space: nowrap;
+      font-style: italic;
+    }
+
+    /* ── Gantt Bars ── */
+    .its-bar {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: var(--bar-h);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.97);
+      cursor: default;
+      overflow: hidden;
+      white-space: nowrap;
+      z-index: 5;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.15);
+      transition: filter 0.15s, box-shadow 0.15s, z-index 0s;
+      /* background injected inline */
+    }
+    .its-bar:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+      z-index: 8;
+    }
+    .its-bar.is-conflict {
+      background: var(--c-danger) !important;
+      animation: its-conflict-pulse 2s ease-in-out infinite;
+    }
+    @keyframes its-conflict-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
+      50%      { box-shadow: 0 0 0 5px rgba(220,38,38,0), inset 0 1px 0 rgba(255,255,255,0.15); }
+    }
+    .its-bar-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .its-bar-badge {
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+    .its-bar-del {
+      flex-shrink: 0;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: rgba(255,255,255,0.9);
+      font-size: 10px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      padding: 0;
+      line-height: 1;
+      transition: background 0.12s;
+    }
+    .its-bar:hover .its-bar-del { display: flex; }
+    .its-bar-del:hover { background: rgba(255,255,255,0.35); }
+
+    /* ── Today Line ── */
+    .its-today-line {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      background: var(--c-today);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .its-today-marker {
+      position: absolute;
+      top: 4px;
+      left: 5px;
+      font-size: 9.5px;
+      font-weight: 800;
+      color: var(--c-today);
+      white-space: nowrap;
+      background: #dbeafe;
+      padding: 2px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+    }
+
+    /* ════════════════════════════════════════
+       TOOLTIP
+    ════════════════════════════════════════ */
+    .its-tooltip {
+      position: fixed;
+      background: #1e1b4b;
+      color: #fff;
+      border-radius: 8px;
+      padding: 12px 15px;
+      font-size: 12.5px;
+      z-index: 9999;
+      pointer-events: none;
+      box-shadow: var(--shadow-lg);
+      min-width: 200px;
+      max-width: 270px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .its-tooltip[hidden] { display: none; }
+    .its-tt-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #c7d2fe;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .its-tt-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 4px;
+      opacity: 0.85;
+    }
+    .its-tt-key { font-weight: 600; }
+    .its-tt-val { text-align: right; font-variant-numeric: tabular-nums; }
+    .its-tt-conflict {
+      margin-top: 9px;
+      padding: 5px 8px;
+      background: rgba(220,38,38,0.25);
+      border: 1px solid rgba(220,38,38,0.4);
+      border-radius: 4px;
+      color: #fca5a5;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    /* ════════════════════════════════════════
+       MODAL
+    ════════════════════════════════════════ */
+    .its-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,14,30,0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .its-overlay[hidden] { display: none; }
+
+    .its-modal {
+      background: var(--c-surface);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 470px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      border: 1px solid var(--c-border);
+    }
+    .its-modal-hdr {
+      padding: 22px 24px 18px;
+      border-bottom: 1px solid var(--c-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--c-primary-light);
+    }
+    .its-modal-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--c-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .its-modal-x {
+      width: 30px; height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--c-primary-mid);
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--c-primary);
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .its-modal-x:hover { background: var(--c-primary-mid); }
+    .its-modal-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .its-modal-ftr {
+      padding: 14px 24px 18px;
+      border-top: 1px solid var(--c-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: var(--c-surface-2);
+    }
+
+    /* Form fields */
+    .its-field { display: flex; flex-direction: column; gap: 5px; }
+    .its-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .its-lbl {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--c-text-2);
+    }
+    .its-lbl span { color: var(--c-danger); }
+    .its-input {
+      padding: 9px 12px;
+      border: 1.5px solid var(--c-border-strong);
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--c-text);
+      background: var(--c-surface);
+      outline: none;
+      transition: border-color 0.14s, box-shadow 0.14s;
+      width: 100%;
+    }
+    .its-input:focus {
+      border-color: var(--c-primary);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    }
+    .its-input[type="color"] {
+      height: 42px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .its-err {
+      font-size: 11.5px;
+      color: var(--c-danger);
+      min-height: 15px;
+      font-weight: 500;
+    }
+
+    /* ════════════════════════════════════════
+       JSON OUTPUT
+    ════════════════════════════════════════ */
+    .its-json-section {
+      padding: 24px;
+      background: var(--c-surface);
+    }
+    .its-json-topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .its-json-label {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--c-text);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .its-json-hint {
+      font-size: 12px;
+      color: var(--c-text-muted);
+      margin-top: 3px;
+      font-weight: 400;
+    }
+    .its-json-hint code {
+      background: var(--c-surface-3);
+      border: 1px solid var(--c-border);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 11px;
+      color: var(--c-primary);
+    }
+    .its-json-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .its-copy-ok {
+      font-size: 12px;
+      color: var(--c-success);
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    .its-copy-ok.show { opacity: 1; }
+    .its-json-ta {
+      width: 100%;
+      min-height: 170px;
+      padding: 14px 16px;
+      border: 1.5px solid var(--c-border-strong);
+      border-radius: var(--radius);
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #1e3a5f;
+      background: #f8f9ff;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.14s;
+    }
+    .its-json-ta:focus { border-color: var(--c-primary); }
+
+    /* ════════════════════════════════════════
+       VIEW TOGGLE BUTTON
+    ════════════════════════════════════════ */
+    .its-view-toggle {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--c-surface-3);
+      border: 1.5px solid var(--c-border-strong);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .its-vtog-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0 11px;
+      height: 28px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--c-text-muted);
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+      white-space: nowrap;
+    }
+    .its-vtog-btn.active {
+      background: var(--c-surface);
+      color: var(--c-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .its-vtog-btn svg { flex-shrink: 0; }
+
+    /* ════════════════════════════════════════
+       COMPACT VIEW OVERRIDES
+       All layout tokens are shrunk here.
+       JS render() reads matching numeric values
+       from the cfg object — keep them in sync.
+    ════════════════════════════════════════ */
+    .its-app.its-compact {
+      --label-w:      80px;   /* JS: cfg.LABEL_W  = 80  */
+      --row-h:        32px;   /* JS: cfg.ROW_H    = 32  */
+      --hdr-month-h:  28px;   /* JS: cfg.HDR_H    = 28  */
+      --hdr-week-h:    0px;   /* week row hidden in compact */
+      --hdr-h:        28px;   /* JS: cfg.HDR_H    = 28  */
+      --bar-h:        20px;   /* JS: cfg.BAR_H    = 20  */
+    }
+
+    /* Compact: tighter corner label */
+    .its-app.its-compact .its-corner {
+      padding: 0 8px 0 10px;
+      align-items: center;
+    }
+    /* Compact: smaller group dot & name */
+    .its-app.its-compact .its-group-dot { width: 7px; height: 7px; }
+    .its-app.its-compact .its-group-name { font-size: 11px; }
+    .its-app.its-compact .its-group-count { display: none; }
+    .its-app.its-compact .its-group-lbl { gap: 6px; padding: 0 8px 0 10px; }
+
+    /* Compact: smaller month labels */
+    .its-app.its-compact .its-month-cell {
+      font-size: 10px;
+      padding: 0 6px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Compact: thinner bars */
+    .its-app.its-compact .its-bar {
+      border-radius: 3px;
+      padding: 0 6px;
+      font-size: 10px;
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    /* Compact: hide the pulse animation (too busy for screenshot) */
+    .its-app.its-compact .its-bar.is-conflict {
+      animation: none;
+      box-shadow: 0 0 0 1.5px rgba(220,38,38,0.6), 0 1px 3px rgba(220,38,38,0.25);
+    }
+    .its-app.its-compact .its-bar-del { display: none !important; }
+    .its-app.its-compact .its-empty-hint { font-size: 9px; }
+    .its-app.its-compact .its-today-marker { font-size: 8px; padding: 1px 3px; }
+
+    /* Compact: narrow scrollbar */
+    .its-app.its-compact .its-gantt-wrap::-webkit-scrollbar { height: 5px; }
+
+    /* ── Compact ribbon (shown inside gantt in compact mode) ── */
+    .its-compact-ribbon {
+      display: none;  /* hidden in normal mode */
+    }
+    .its-app.its-compact .its-compact-ribbon {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: linear-gradient(90deg, #eef2ff 0%, #f5f3ff 100%);
+      border-bottom: 1px solid var(--c-primary-mid);
+      font-size: 11.5px;
+      color: var(--c-primary);
+      font-weight: 600;
+      gap: 12px;
+    }
+    .its-compact-ribbon-left { display: flex; align-items: center; gap: 7px; }
+    .its-compact-ribbon-tip  {
+      font-size: 11px;
+      color: var(--c-text-muted);
+      font-weight: 400;
+    }
+
+    /* ── Hide non-essential chrome in compact mode ── */
+    .its-app.its-compact .its-banner,
+    .its-app.its-compact .its-json-section { display: none; }
+    .its-app.its-compact .its-legend-item:last-child { display: none; }
+    .its-app.its-compact .its-toolbar {
+      padding: 0 16px;
+      height: 36px;
+    }
+    .its-app.its-compact .its-legend-heading,
+    .its-app.its-compact .its-legend-item { font-size: 11px; }
+    .its-app.its-compact .its-swatch { width: 20px; height: 10px; }
+    .its-app.its-compact .its-topbar {
+      height: 48px;
+    }
+    .its-app.its-compact .its-brand-name { font-size: 15px; }
+    .its-app.its-compact .its-brand-sub  { display: none; }
+    .its-app.its-compact .its-brand-icon { width: 30px; height: 30px; border-radius: 7px; }
+    .its-app.its-compact .its-btn { height: 28px; font-size: 12px; padding: 0 11px; }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     APP ROOT — scoped wrapper prevents SharePoint conflicts
+═══════════════════════════════════════════════════════ -->
+<div class="its-app" id="itsApp">
+
+  <!-- ── Warning Banner ── -->
+  <div class="its-banner">
+    <span class="its-banner-icon">⚠️</span>
+    <span>
+      <strong>CHANGES ARE TEMPORARY.</strong>
+      Copy the JSON from the output at the bottom of this page and replace the
+      <code>trainingData</code> variable in the HTML source code to save your schedule permanently.
+    </span>
+  </div>
+
+  <!-- ── Top Bar ── -->
+  <div class="its-topbar">
+    <div class="its-brand">
+      <div class="its-brand-icon">
+        <!-- Calendar icon -->
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2.5" y="3.5" width="15" height="14" rx="2" stroke="#4f46e5" stroke-width="1.7"/>
+          <path d="M2.5 8H17.5" stroke="#4f46e5" stroke-width="1.7"/>
+          <path d="M7 2V5M13 2V5" stroke="#4f46e5" stroke-width="1.7" stroke-linecap="round"/>
+          <rect x="5.5" y="10.5" width="3" height="2.5" rx="0.5" fill="#4f46e5"/>
+          <rect x="11.5" y="10.5" width="3" height="2.5" rx="0.5" fill="#c7d2fe"/>
+        </svg>
+      </div>
+      <div>
+        <div class="its-brand-name">Initiative Training Scheduler</div>
+        <div class="its-brand-sub">6-Month Gantt View · Live Conflict Detection</div>
+      </div>
+    </div>
+    <div class="its-topbar-right">
+      <div class="its-conflict-pill" id="itsConflictPill" hidden>
+        <span>🔴</span>
+        <span id="itsConflictCount">0</span> Conflict(s)
+      </div>
+      <button class="its-btn its-btn-primary" id="itsAddBtn">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M6 1V11M1 6H11" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Add Training
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Toolbar / Legend ── -->
+  <div class="its-toolbar">
+    <div class="its-legend">
+      <span class="its-legend-heading">Legend</span>
+      <div class="its-legend-item">
+        <div class="its-swatch" style="background:#4f46e5;"></div>
+        <span>Training Session</span>
+      </div>
+      <div class="its-legend-item">
+        <div class="its-swatch" style="background:#dc2626;"></div>
+        <span>⚠️ Scheduling Conflict</span>
+      </div>
+      <div class="its-legend-item">
+        <div class="its-swatch-line" style="background:#2563eb;"></div>
+        <span>Today</span>
+      </div>
+      <div class="its-legend-item" style="color:#9ca3af; font-size:11px;">
+        Hover bars for details · Click ✕ to delete
+      </div>
+    </div>
+    <!-- View mode toggle -->
+    <div class="its-view-toggle" role="group" aria-label="View mode">
+      <button class="its-vtog-btn active" id="itsVtogNormal" title="Full detail view">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <rect x="1" y="1" width="11" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="1" y="8" width="11" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        Normal
+      </button>
+      <button class="its-vtog-btn" id="itsVtogCompact" title="Compact screenshot view">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <rect x="1" y="1.5" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="1" y="5.5" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="1" y="9.5" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        Compact
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Compact View Ribbon (visible only in compact mode) ── -->
+  <div class="its-compact-ribbon" id="itsCompactRibbon">
+    <div class="its-compact-ribbon-left">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="2" width="12" height="10" rx="1.5" stroke="#4f46e5" stroke-width="1.4"/>
+        <path d="M4 5.5H10M4 8H8" stroke="#4f46e5" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      📸 Compact View — optimised for screenshots &amp; presentations
+    </div>
+    <span class="its-compact-ribbon-tip">Use browser zoom (Ctrl −) to fit the full chart before snapping</span>
+  </div>
+
+  <!-- ── Gantt Chart ── -->
+  <div class="its-gantt-wrap" id="itsGanttWrap">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- ── JSON Output ── -->
+  <div class="its-json-section">
+    <div class="its-json-topbar">
+      <div>
+        <div class="its-json-label">📋 Schedule JSON</div>
+        <div class="its-json-hint">
+          Copy this and replace the <code>trainingData</code> array in the HTML source to persist your changes.
+        </div>
+      </div>
+      <div class="its-json-actions">
+        <span class="its-copy-ok" id="itsCopyOk">✓ Copied to clipboard!</span>
+        <button class="its-btn its-btn-copy" id="itsCopyBtn">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="#4f46e5" stroke-width="1.5"/>
+            <path d="M3 9H2a1 1 0 01-1-1V2a1 1 0 011-1h6a1 1 0 011 1v1" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Copy JSON
+        </button>
+      </div>
+    </div>
+    <textarea class="its-json-ta" id="itsJsonOutput" readonly spellcheck="false"></textarea>
+  </div>
+
+</div><!-- /#itsApp -->
+
+
+<!-- ══════════════════════════════════════
+     ADD TRAINING MODAL
+══════════════════════════════════════ -->
+<div class="its-overlay" id="itsOverlay" hidden>
+  <div class="its-modal" role="dialog" aria-modal="true" aria-labelledby="itsModalTitle">
+    <div class="its-modal-hdr">
+      <div class="its-modal-title" id="itsModalTitle">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1.5" y="2.5" width="15" height="13" rx="2" stroke="#4f46e5" stroke-width="1.7"/>
+          <path d="M1.5 7H16.5" stroke="#4f46e5" stroke-width="1.7"/>
+          <path d="M6 1V4M12 1V4" stroke="#4f46e5" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M9 10V13M7.5 11.5H10.5" stroke="#4f46e5" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Add Training Session
+      </div>
+      <button class="its-modal-x" id="itsModalX" aria-label="Close">✕</button>
+    </div>
+    <div class="its-modal-body">
+      <!-- Title -->
+      <div class="its-field">
+        <label class="its-lbl" for="itsTitle">Title <span>*</span></label>
+        <input class="its-input" type="text" id="itsTitle" placeholder="e.g. Safety Orientation">
+        <div class="its-err" id="itsErrTitle" role="alert"></div>
+      </div>
+      <!-- Group -->
+      <div class="its-field">
+        <label class="its-lbl" for="itsGroup">Group <span>*</span></label>
+        <select class="its-input" id="itsGroup">
+          <option value="">Select a group…</option>
+          <option value="Group 1">Group 1</option>
+          <option value="Group 2">Group 2</option>
+          <option value="Group 3">Group 3</option>
+          <option value="Group 4">Group 4</option>
+          <option value="Group 5">Group 5</option>
+          <option value="Group 6">Group 6</option>
+        </select>
+        <div class="its-err" id="itsErrGroup" role="alert"></div>
+      </div>
+      <!-- Start / End -->
+      <div class="its-field-row">
+        <div class="its-field">
+          <label class="its-lbl" for="itsStart">Start Date <span>*</span></label>
+          <input class="its-input" type="date" id="itsStart">
+          <div class="its-err" id="itsErrStart" role="alert"></div>
+        </div>
+        <div class="its-field">
+          <label class="its-lbl" for="itsEnd">End Date <span>*</span></label>
+          <input class="its-input" type="date" id="itsEnd">
+          <div class="its-err" id="itsErrEnd" role="alert"></div>
+        </div>
+      </div>
+      <!-- Color -->
+      <div class="its-field">
+        <label class="its-lbl" for="itsColor">Bar Color</label>
+        <input class="its-input" type="color" id="itsColor" value="#4f46e5">
+      </div>
+    </div>
+    <div class="its-modal-ftr">
+      <button class="its-btn its-btn-ghost" id="itsModalCancel">Cancel</button>
+      <button class="its-btn its-btn-primary" id="itsModalSubmit">Add Training</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tooltip (appended to body to escape any overflow:hidden) -->
+<div class="its-tooltip" id="itsTooltip" hidden></div>
+
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+/*
+  ================================================================
+  INITIATIVE TRAINING SCHEDULER — Core Script
+  All identifiers prefixed with "its" to avoid polluting the
+  global namespace in SharePoint environments.
+  ================================================================
+*/
+
+/* ────────────────────────────────────────
+   INITIAL DATA  ← edit this to save state
+   ──────────────────────────────────────── */
+const trainingData = [
+  { "id": 1, "group": "Group 1", "title": "Onboarding",              "start": "2026-05-05", "end": "2026-05-10", "color": "#4f46e5" },
+  { "id": 2, "group": "Group 1", "title": "Technical Deep Dive",     "start": "2026-06-01", "end": "2026-06-05", "color": "#4f46e5" },
+  { "id": 3, "group": "Group 2", "title": "Safety Training",         "start": "2026-05-12", "end": "2026-05-14", "color": "#7c3aed" },
+  { "id": 4, "group": "Group 2", "title": "Safety Refresher",        "start": "2026-05-13", "end": "2026-05-16", "color": "#7c3aed" },
+  { "id": 5, "group": "Group 3", "title": "Leadership Workshop",     "start": "2026-07-07", "end": "2026-07-09", "color": "#0891b2" },
+  { "id": 6, "group": "Group 3", "title": "Soft Skills Bootcamp",    "start": "2026-08-03", "end": "2026-08-07", "color": "#0891b2" },
+  { "id": 7, "group": "Group 4", "title": "Compliance Review",       "start": "2026-08-10", "end": "2026-08-12", "color": "#d97706" },
+  { "id": 8, "group": "Group 5", "title": "Product Knowledge",       "start": "2026-09-01", "end": "2026-09-05", "color": "#059669" },
+  { "id": 9, "group": "Group 6", "title": "Customer Service 101",    "start": "2026-06-15", "end": "2026-06-19", "color": "#db2777" }
+];
+
+/* ────────────────────────────────────────
+   VIEW STATE — compact is NOT persisted
+   ──────────────────────────────────────── */
+let itsCompact = false;   // false = normal (default on every page load)
+
+/* ────────────────────────────────────────
+   CONFIG — two presets; values must stay
+   in sync with CSS token overrides above.
+   ──────────────────────────────────────── */
+const ITS_NORMAL = {
+  PX_PER_DAY:  25,   // CSS --px-per-day (informational; not used by CSS max-height)
+  ROW_H:       62,   // CSS --row-h
+  LABEL_W:    150,   // CSS --label-w
+  HDR_H:       62,   // CSS --hdr-h  (36 months + 26 weeks)
+  BAR_H:       34,   // CSS --bar-h
+  SHOW_WEEKS: true,
+};
+const ITS_COMPACT = {
+  PX_PER_DAY:   3.5, // fixed scale: 6 months ≈ 184 days × 3.5 ≈ 644px content
+  ROW_H:         32,  // CSS .its-compact --row-h
+  LABEL_W:       80,  // CSS .its-compact --label-w
+  HDR_H:         28,  // CSS .its-compact --hdr-h  (months only; no week row)
+  BAR_H:         20,  // CSS .its-compact --bar-h
+  SHOW_WEEKS: false,
+};
+/* ────────────────────────────────────────
+   SHARED CONSTANTS (not view-dependent)
+   ──────────────────────────────────────── */
+const ITS = {
+  GROUPS: ['Group 1','Group 2','Group 3','Group 4','Group 5','Group 6'],
+  GROUP_COLORS: {
+    'Group 1': '#4f46e5',
+    'Group 2': '#7c3aed',
+    'Group 3': '#0891b2',
+    'Group 4': '#d97706',
+    'Group 5': '#059669',
+    'Group 6': '#db2777',
+  },
+  MONTHS: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+};
+
+/* ────────────────────────────────────────
+   STATE
+   ──────────────────────────────────────── */
+let itsData   = trainingData.map(d => ({ ...d }));  // mutable working copy
+let itsNextId = Math.max(0, ...itsData.map(d => d.id)) + 1;
+
+/* ────────────────────────────────────────
+   DATE UTILITIES
+   ──────────────────────────────────────── */
+
+/** Parse YYYY-MM-DD to local midnight Date (avoids UTC shift). */
+function itsDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/** Format Date to YYYY-MM-DD local. */
+function itsFmt(date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+/** Whole-day difference (b − a). */
+function itsDays(a, b) { return Math.round((b - a) / 86400000); }
+
+/** Days in a given month (0-indexed). */
+function itsDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/* ────────────────────────────────────────
+   VIEW RANGE
+   ──────────────────────────────────────── */
+function itsRange() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 6);
+  return { start, end, totalDays: itsDays(start, end) };
+}
+
+/* ────────────────────────────────────────
+   CONFLICT DETECTION
+   Returns a Set of event IDs that have ≥1 overlap in their group.
+   ──────────────────────────────────────── */
+function itsConflicts(data) {
+  const ids = new Set();
+  ITS.GROUPS.forEach(group => {
+    const items = data.filter(d => d.group === group);
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const aS = itsDate(items[i].start), aE = itsDate(items[i].end);
+        const bS = itsDate(items[j].start), bE = itsDate(items[j].end);
+        if (aS <= bE && bS <= aE) {        // overlap condition (inclusive)
+          ids.add(items[i].id);
+          ids.add(items[j].id);
+        }
+      }
+    }
+  });
+  return ids;
+}
+
+/* ────────────────────────────────────────
+   HEADER CELL BUILDERS
+   ──────────────────────────────────────── */
+
+/** Build an array of { label, width } for each month in the range. */
+function itsMonthCells(viewStart, totalDays, cfg) {
+  const cells = [];
+  let cur = new Date(viewStart);   // current pointer (starts at today)
+  let offset = 0;
+
+  while (offset < totalDays) {
+    // Days remaining in cur's month from 'cur' date (inclusive)
+    const dom        = cur.getDate();
+    const dim        = itsDaysInMonth(cur.getFullYear(), cur.getMonth());
+    const daysLeft   = dim - dom + 1;
+    const span       = Math.min(daysLeft, totalDays - offset);
+
+    cells.push({
+      label: `${ITS.MONTHS[cur.getMonth()]} ${cur.getFullYear()}`,
+      width: span * cfg.PX_PER_DAY,
+    });
+
+    offset += daysLeft;
+    // Advance to 1st of next month
+    cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+  }
+  return cells;
+}
+
+/** Build an array of { label, width } for each 7-day week block in the range. */
+function itsWeekCells(viewStart, totalDays, cfg) {
+  const cells = [];
+  let offset = 0;
+  while (offset < totalDays) {
+    const span  = Math.min(7, totalDays - offset);
+    const date  = new Date(viewStart.getTime() + offset * 86400000);
+    cells.push({
+      label: `${date.getDate()} ${ITS.MONTHS[date.getMonth()]}`,
+      width: span * cfg.PX_PER_DAY,
+    });
+    offset += 7;
+  }
+  return cells;
+}
+
+/* ────────────────────────────────────────
+   MAIN RENDER
+   ──────────────────────────────────────── */
+function itsRender() {
+  /* Pick the active layout config based on current view mode */
+  const cfg = itsCompact ? ITS_COMPACT : ITS_NORMAL;
+
+  const { start: vStart, totalDays } = itsRange();
+  const totalPx  = totalDays * cfg.PX_PER_DAY;
+  const canvasW  = cfg.LABEL_W + totalPx;
+  const conflicts = itsConflicts(itsData);
+  const weekGridPx = cfg.PX_PER_DAY * 7;  // for CSS custom property on row-content
+
+  // Today offset (clamped)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayOff = itsDays(vStart, today);
+
+  /* ── Update conflict pill ── */
+  const pill     = document.getElementById('itsConflictPill');
+  const countEl  = document.getElementById('itsConflictCount');
+  if (conflicts.size > 0) {
+    pill.removeAttribute('hidden');
+    countEl.textContent = conflicts.size;
+  } else {
+    pill.setAttribute('hidden', '');
+  }
+
+  /* ── Build HTML string ── */
+  let h = `<div class="its-gantt-canvas" style="min-width:${canvasW}px;position:relative;">`;
+
+  /* ── Header ── */
+  const monthCells = itsMonthCells(vStart, totalDays, cfg);
+  const weekCells  = cfg.SHOW_WEEKS ? itsWeekCells(vStart, totalDays, cfg) : [];
+
+  // Conditionally render the week sub-row
+  const weekRowHtml = cfg.SHOW_WEEKS
+    ? `<div class="its-week-row">
+         ${weekCells.map(c => `<div class="its-week-cell" style="width:${c.width}px;">${c.label}</div>`).join('')}
+       </div>`
+    : '';
+
+  h += `
+    <div class="its-gantt-hdr">
+      <div class="its-corner"><span class="its-corner-label">Groups</span></div>
+      <div class="its-timeline-hdr" style="width:${totalPx}px;">
+        <div class="its-month-row">
+          ${monthCells.map(c => `<div class="its-month-cell" style="width:${c.width}px;">${c.label}</div>`).join('')}
+        </div>
+        ${weekRowHtml}
+      </div>
+    </div>`;
+
+  /* ── Rows ── */
+  ITS.GROUPS.forEach(group => {
+    const events     = itsData.filter(d => d.group === group);
+    const dotColor   = ITS.GROUP_COLORS[group] || '#4f46e5';
+
+    h += `
+      <div class="its-gantt-row">
+        <div class="its-group-lbl">
+          <div class="its-group-dot" style="background:${dotColor};"></div>
+          <span class="its-group-name">${group}</span>
+          <span class="its-group-count">${events.length}</span>
+        </div>
+        <div class="its-row-content" style="width:${totalPx}px;--week-grid:${weekGridPx}px;">`;
+
+    if (events.length === 0) {
+      h += `<div class="its-empty-hint">No sessions scheduled</div>`;
+    }
+
+    events.forEach(ev => {
+      /* Calculate pixel position, clipped to view */
+      const rawL  = itsDays(vStart, itsDate(ev.start));
+      const rawR  = itsDays(vStart, itsDate(ev.end)) + 1;  // end is inclusive
+      const clipL = Math.max(0, rawL);
+      const clipR = Math.min(totalDays, rawR);
+      if (clipR <= 0 || clipL >= totalDays) return;  // fully outside view → skip
+
+      const left   = clipL * cfg.PX_PER_DAY;
+      const width  = (clipR - clipL) * cfg.PX_PER_DAY;
+      const isConf = conflicts.has(ev.id);
+      const bg     = isConf ? '#dc2626' : (ev.color || dotColor);
+      // In compact mode only show conflict badge if bar is wide enough
+      const badge  = (isConf && width > 28) ? `<span class="its-bar-badge">⚠️</span>` : '';
+      // Delete button only in normal mode (compact is read-only screenshot view)
+      const delBtn = cfg.SHOW_WEEKS
+        ? `<button class="its-bar-del" data-del="${ev.id}" title="Delete this session">✕</button>`
+        : '';
+      // In compact mode suppress the title text when the bar is too narrow to read
+      const barText = (!cfg.SHOW_WEEKS && width < 22)
+        ? ''
+        : `<span class="its-bar-text">${ev.title}</span>`;
+
+      h += `
+        <div class="its-bar${isConf ? ' is-conflict' : ''}"
+          style="left:${left}px;width:${width}px;background:${bg};"
+          data-id="${ev.id}"
+          data-title="${ev.title.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+          data-group="${ev.group}"
+          data-start="${ev.start}"
+          data-end="${ev.end}"
+        >
+          ${barText}
+          ${badge}
+          ${delBtn}
+        </div>`;
+    });
+
+    h += `</div></div>`; // .its-row-content  .its-gantt-row
+  });
+
+  /* ── Today line ── */
+  if (todayOff >= 0 && todayOff <= totalDays) {
+    const lineX    = cfg.LABEL_W + todayOff * cfg.PX_PER_DAY;
+    const lineH    = cfg.HDR_H + ITS.GROUPS.length * cfg.ROW_H;
+    h += `
+      <div class="its-today-line" style="left:${lineX}px;height:${lineH}px;">
+        <div class="its-today-marker">TODAY</div>
+      </div>`;
+  }
+
+  h += `</div>`; // .its-gantt-canvas
+
+  /* ── Inject ── */
+  const wrap = document.getElementById('itsGanttWrap');
+  wrap.innerHTML = h;
+
+  /* ── Attach bar event listeners (tooltips work in both modes) ── */
+  wrap.querySelectorAll('.its-bar').forEach(bar => {
+    bar.addEventListener('mouseenter', itsShowTip);
+    bar.addEventListener('mousemove',  itsMoveTip);
+    bar.addEventListener('mouseleave', itsHideTip);
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      itsDelete(parseInt(btn.getAttribute('data-del'), 10));
+    });
+  });
+
+  /* ── Update JSON output (hidden in compact, but keep it in sync) ── */
+  const jsonEl = document.getElementById('itsJsonOutput');
+  if (jsonEl) jsonEl.value = JSON.stringify(itsData, null, 2);
+}
+
+/* ────────────────────────────────────────
+   TOOLTIP
+   ──────────────────────────────────────── */
+const itsTip = document.getElementById('itsTooltip');
+
+function itsShowTip(e) {
+  const bar    = e.currentTarget;
+  const id     = parseInt(bar.getAttribute('data-id'), 10);
+  const ev     = itsData.find(d => d.id === id);
+  if (!ev) return;
+
+  const dur      = itsDays(itsDate(ev.start), itsDate(ev.end)) + 1;
+  const isConf   = itsConflicts(itsData).has(id);
+  const confHtml = isConf
+    ? `<div class="its-tt-conflict">⚠️ This session has a scheduling conflict!</div>`
+    : '';
+
+  itsTip.innerHTML = `
+    <div class="its-tt-title">${ev.title}</div>
+    <div class="its-tt-row"><span class="its-tt-key">Group</span><span class="its-tt-val">${ev.group}</span></div>
+    <div class="its-tt-row"><span class="its-tt-key">Starts</span><span class="its-tt-val">${ev.start}</span></div>
+    <div class="its-tt-row"><span class="its-tt-key">Ends</span><span class="its-tt-val">${ev.end}</span></div>
+    <div class="its-tt-row"><span class="its-tt-key">Duration</span><span class="its-tt-val">${dur} day${dur !== 1 ? 's' : ''}</span></div>
+    ${confHtml}
+  `;
+  itsTip.removeAttribute('hidden');
+  itsMoveTip(e);
+}
+
+function itsMoveTip(e) {
+  const tx = Math.min(e.clientX + 16, window.innerWidth  - 290);
+  const ty = Math.min(e.clientY - 12, window.innerHeight - 180);
+  itsTip.style.left = tx + 'px';
+  itsTip.style.top  = ty + 'px';
+}
+
+function itsHideTip() {
+  itsTip.setAttribute('hidden', '');
+}
+
+/* ────────────────────────────────────────
+   DELETE EVENT
+   ──────────────────────────────────────── */
+function itsDelete(id) {
+  const ev = itsData.find(d => d.id === id);
+  if (!ev) return;
+  if (!confirm(`Delete "${ev.title}" from ${ev.group}?`)) return;
+  itsData = itsData.filter(d => d.id !== id);
+  itsRender();
+}
+
+/* ────────────────────────────────────────
+   MODAL
+   ──────────────────────────────────────── */
+const itsOverlay = document.getElementById('itsOverlay');
+
+function itsOpenModal() {
+  /* Reset form */
+  const today    = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  document.getElementById('itsTitle').value = '';
+  document.getElementById('itsGroup').value = '';
+  document.getElementById('itsStart').value = itsFmt(today);
+  document.getElementById('itsEnd').value   = itsFmt(nextWeek);
+  document.getElementById('itsColor').value = '#4f46e5';
+  /* Clear validation messages */
+  ['Title','Group','Start','End'].forEach(f => {
+    document.getElementById('itsErr' + f).textContent = '';
+  });
+  itsOverlay.removeAttribute('hidden');
+  setTimeout(() => document.getElementById('itsTitle').focus(), 60);
+}
+
+function itsCloseModal() {
+  itsOverlay.setAttribute('hidden', '');
+}
+
+/** Validate & submit the form. */
+function itsSubmit() {
+  const title  = document.getElementById('itsTitle').value.trim();
+  const group  = document.getElementById('itsGroup').value;
+  const start  = document.getElementById('itsStart').value;
+  const end    = document.getElementById('itsEnd').value;
+  const color  = document.getElementById('itsColor').value;
+  let   valid  = true;
+
+  /* Clear previous errors */
+  ['Title','Group','Start','End'].forEach(f => {
+    document.getElementById('itsErr' + f).textContent = '';
+  });
+
+  /* Validate */
+  if (!title) {
+    document.getElementById('itsErrTitle').textContent = 'Title is required.';
+    valid = false;
+  }
+  if (!group) {
+    document.getElementById('itsErrGroup').textContent = 'Please select a group.';
+    valid = false;
+  }
+  if (!start) {
+    document.getElementById('itsErrStart').textContent = 'Start date is required.';
+    valid = false;
+  }
+  if (!end) {
+    document.getElementById('itsErrEnd').textContent = 'End date is required.';
+    valid = false;
+  }
+  if (start && end && end < start) {
+    document.getElementById('itsErrEnd').textContent = 'End date must be on or after start date.';
+    valid = false;
+  }
+
+  if (!valid) return;
+
+  /* Add to data */
+  itsData.push({ id: itsNextId++, group, title, start, end, color });
+  itsCloseModal();
+  itsRender();
+}
+
+/* ── Modal event wiring ── */
+document.getElementById('itsAddBtn').addEventListener('click', itsOpenModal);
+document.getElementById('itsModalX').addEventListener('click', itsCloseModal);
+document.getElementById('itsModalCancel').addEventListener('click', itsCloseModal);
+document.getElementById('itsModalSubmit').addEventListener('click', itsSubmit);
+
+/* Close on backdrop click */
+itsOverlay.addEventListener('click', e => {
+  if (e.target === itsOverlay) itsCloseModal();
+});
+/* Close on Escape key */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !itsOverlay.hasAttribute('hidden')) itsCloseModal();
+});
+/* Allow Enter key on inputs to submit */
+['itsTitle','itsGroup','itsStart','itsEnd'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') itsSubmit();
+  });
+});
+
+/* ────────────────────────────────────────
+   COPY JSON
+   ──────────────────────────────────────── */
+document.getElementById('itsCopyBtn').addEventListener('click', () => {
+  const ta      = document.getElementById('itsJsonOutput');
+  const okEl    = document.getElementById('itsCopyOk');
+
+  const succeed = () => {
+    okEl.classList.add('show');
+    setTimeout(() => okEl.classList.remove('show'), 2600);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(ta.value).then(succeed).catch(() => {
+      ta.select();
+      document.execCommand('copy');
+      succeed();
+    });
+  } else {
+    /* Fallback for older SharePoint / IE11 environments */
+    ta.select();
+    document.execCommand('copy');
+    succeed();
+  }
+});
+
+/* ────────────────────────────────────────
+   VIEW TOGGLE — Normal ↔ Compact
+   ──────────────────────────────────────── */
+const itsApp          = document.getElementById('itsApp');
+const itsVtogNormal   = document.getElementById('itsVtogNormal');
+const itsVtogCompact  = document.getElementById('itsVtogCompact');
+
+function itsSetView(compact) {
+  itsCompact = compact;
+
+  /* Toggle CSS class on root (drives all compact CSS overrides) */
+  itsApp.classList.toggle('its-compact', compact);
+
+  /* Update segmented control active state */
+  itsVtogNormal.classList.toggle('active', !compact);
+  itsVtogCompact.classList.toggle('active',  compact);
+
+  /* Re-render with new config */
+  itsRender();
+}
+
+itsVtogNormal.addEventListener('click',  () => itsSetView(false));
+itsVtogCompact.addEventListener('click', () => itsSetView(true));
+
+/* ────────────────────────────────────────
+   BOOT
+   ──────────────────────────────────────── */
+itsRender();
+
+</script>
+</body>
+</html>
