@@ -185,6 +185,18 @@
       border-radius: 2px;
       flex-shrink: 0;
     }
+    /* Striped swatch used in legend for Placeholder Event type */
+    .its-swatch-placeholder {
+      width: 26px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        #f97316 0px, #f97316 3px,
+        #fed7aa 3px, #fed7aa 6px
+      );
+    }
 
     /* ════════════════════════════════════════
        BUTTONS
@@ -227,24 +239,6 @@
       border: 1.5px solid var(--c-primary-mid);
     }
     .its-btn-copy:hover { background: var(--c-primary-light); }
-
-    /* ════════════════════════════════════════
-       CONFLICT BADGE (top bar)
-    ════════════════════════════════════════ */
-    .its-conflict-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 0 10px;
-      height: 28px;
-      border-radius: 14px;
-      background: var(--c-danger-light);
-      border: 1px solid var(--c-danger-border);
-      color: var(--c-danger);
-      font-size: 12px;
-      font-weight: 700;
-    }
-    .its-conflict-pill[hidden] { display: none; }
 
     /* ════════════════════════════════════════
        GANTT — SCROLL CONTAINER
@@ -325,6 +319,8 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       border-right: 1px solid var(--c-border);
+      overflow: hidden;          /* clip text — never spill into next cell */
+      white-space: nowrap;
       /* width injected inline */
     }
 
@@ -458,13 +454,18 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
       z-index: 8;
     }
-    .its-bar.is-conflict {
-      background: var(--c-danger) !important;
-      animation: its-conflict-pulse 2s ease-in-out infinite;
+    /* Placeholder Event bar — diagonal stripe, distinct from scheduled sessions */
+    .its-bar.is-placeholder {
+      background: repeating-linear-gradient(
+        45deg,
+        #f97316 0px, #f97316 5px,
+        #fed7aa 5px, #fed7aa 10px
+      ) !important;
+      color: #431407 !important;
+      box-shadow: 0 1px 3px rgba(249,115,22,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
     }
-    @keyframes its-conflict-pulse {
-      0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
-      50%      { box-shadow: 0 0 0 5px rgba(220,38,38,0), inset 0 1px 0 rgba(255,255,255,0.15); }
+    .its-bar.is-placeholder:hover {
+      filter: brightness(1.07);
     }
     .its-bar-text {
       overflow: hidden;
@@ -558,16 +559,6 @@
     }
     .its-tt-key { font-weight: 600; }
     .its-tt-val { text-align: right; font-variant-numeric: tabular-nums; }
-    .its-tt-conflict {
-      margin-top: 9px;
-      padding: 5px 8px;
-      background: rgba(220,38,38,0.25);
-      border: 1px solid rgba(220,38,38,0.4);
-      border-radius: 4px;
-      color: #fca5a5;
-      font-size: 11.5px;
-      font-weight: 700;
-    }
 
     /* ════════════════════════════════════════
        MODAL
@@ -666,6 +657,33 @@
       padding: 4px 8px;
       cursor: pointer;
     }
+    /* Event-type radio pill group */
+    .its-type-group {
+      display: flex;
+      gap: 8px;
+    }
+    .its-type-opt {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1.5px solid var(--c-border-strong);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--c-text-2);
+      transition: border-color 0.14s, background 0.14s;
+      user-select: none;
+    }
+    .its-type-opt:has(input:checked) {
+      border-color: var(--c-primary);
+      background: var(--c-primary-light);
+      color: var(--c-primary);
+      font-weight: 600;
+    }
+    .its-type-opt input[type="radio"] { accent-color: var(--c-primary); }
     .its-err {
       font-size: 11.5px;
       color: var(--c-danger);
@@ -785,7 +803,7 @@
        from the cfg object — keep them in sync.
     ════════════════════════════════════════ */
     .its-app.its-compact {
-      --label-w:      80px;   /* JS: cfg.LABEL_W  = 80  */
+      --label-w:     120px;   /* JS: cfg.LABEL_W  = 120 — wide enough for long names */
       --row-h:        32px;   /* JS: cfg.ROW_H    = 32  */
       --hdr-month-h:  28px;   /* JS: cfg.HDR_H    = 28  */
       --hdr-week-h:    0px;   /* week row hidden in compact */
@@ -818,11 +836,6 @@
       font-size: 10px;
       font-weight: 700;
       box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    }
-    /* Compact: hide the pulse animation (too busy for screenshot) */
-    .its-app.its-compact .its-bar.is-conflict {
-      animation: none;
-      box-shadow: 0 0 0 1.5px rgba(220,38,38,0.6), 0 1px 3px rgba(220,38,38,0.25);
     }
     .its-app.its-compact .its-bar-del { display: none !important; }
     .its-app.its-compact .its-empty-hint { font-size: 9px; }
@@ -907,14 +920,10 @@
       </div>
       <div>
         <div class="its-brand-name">Initiative Training Scheduler</div>
-        <div class="its-brand-sub">6-Month Gantt View · Live Conflict Detection</div>
+        <div class="its-brand-sub">6-Month Gantt View</div>
       </div>
     </div>
     <div class="its-topbar-right">
-      <div class="its-conflict-pill" id="itsConflictPill" hidden>
-        <span>🔴</span>
-        <span id="itsConflictCount">0</span> Conflict(s)
-      </div>
       <button class="its-btn its-btn-primary" id="itsAddBtn">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path d="M6 1V11M1 6H11" stroke="white" stroke-width="2" stroke-linecap="round"/>
@@ -933,8 +942,8 @@
         <span>Training Session</span>
       </div>
       <div class="its-legend-item">
-        <div class="its-swatch" style="background:#dc2626;"></div>
-        <span>⚠️ Scheduling Conflict</span>
+        <div class="its-swatch-placeholder"></div>
+        <span>Placeholder Event</span>
       </div>
       <div class="its-legend-item">
         <div class="its-swatch-line" style="background:#2563eb;"></div>
@@ -1058,8 +1067,22 @@
           <div class="its-err" id="itsErrEnd" role="alert"></div>
         </div>
       </div>
-      <!-- Color -->
+      <!-- Event Type -->
       <div class="its-field">
+        <label class="its-lbl">Event Type <span>*</span></label>
+        <div class="its-type-group">
+          <label class="its-type-opt">
+            <input type="radio" name="itsType" id="itsTypeTraining" value="training" checked>
+            📅 Training Session
+          </label>
+          <label class="its-type-opt">
+            <input type="radio" name="itsType" id="itsTypePlaceholder" value="placeholder">
+            🔲 Placeholder Event
+          </label>
+        </div>
+      </div>
+      <!-- Bar Color (hidden for Placeholder) -->
+      <div class="its-field" id="itsColorField">
         <label class="its-lbl" for="itsColor">Bar Color</label>
         <input class="its-input" type="color" id="itsColor" value="#4f46e5">
       </div>
@@ -1091,15 +1114,16 @@
    INITIAL DATA  ← edit this to save state
    ──────────────────────────────────────── */
 const trainingData = [
-  { "id": 1, "group": "Group 1", "title": "Onboarding",              "start": "2026-05-05", "end": "2026-05-10", "color": "#4f46e5" },
-  { "id": 2, "group": "Group 1", "title": "Technical Deep Dive",     "start": "2026-06-01", "end": "2026-06-05", "color": "#4f46e5" },
-  { "id": 3, "group": "Group 2", "title": "Safety Training",         "start": "2026-05-12", "end": "2026-05-14", "color": "#7c3aed" },
-  { "id": 4, "group": "Group 2", "title": "Safety Refresher",        "start": "2026-05-13", "end": "2026-05-16", "color": "#7c3aed" },
-  { "id": 5, "group": "Group 3", "title": "Leadership Workshop",     "start": "2026-07-07", "end": "2026-07-09", "color": "#0891b2" },
-  { "id": 6, "group": "Group 3", "title": "Soft Skills Bootcamp",    "start": "2026-08-03", "end": "2026-08-07", "color": "#0891b2" },
-  { "id": 7, "group": "Group 4", "title": "Compliance Review",       "start": "2026-08-10", "end": "2026-08-12", "color": "#d97706" },
-  { "id": 8, "group": "Group 5", "title": "Product Knowledge",       "start": "2026-09-01", "end": "2026-09-05", "color": "#059669" },
-  { "id": 9, "group": "Group 6", "title": "Customer Service 101",    "start": "2026-06-15", "end": "2026-06-19", "color": "#db2777" }
+  { "id": 1, "group": "Group 1", "title": "Onboarding",              "start": "2026-05-05", "end": "2026-05-10", "color": "#4f46e5", "type": "training" },
+  { "id": 2, "group": "Group 1", "title": "Technical Deep Dive",     "start": "2026-06-01", "end": "2026-06-05", "color": "#4f46e5", "type": "training" },
+  { "id": 3, "group": "Group 2", "title": "Safety Training",         "start": "2026-05-12", "end": "2026-05-16", "color": "#7c3aed", "type": "training" },
+  { "id": 4, "group": "Group 2", "title": "TBD Advanced Module",     "start": "2026-06-10", "end": "2026-06-20", "color": "",        "type": "placeholder" },
+  { "id": 5, "group": "Group 3", "title": "Leadership Workshop",     "start": "2026-07-07", "end": "2026-07-09", "color": "#0891b2", "type": "training" },
+  { "id": 6, "group": "Group 3", "title": "Soft Skills Bootcamp",    "start": "2026-08-03", "end": "2026-08-07", "color": "#0891b2", "type": "training" },
+  { "id": 7, "group": "Group 4", "title": "Compliance Review",       "start": "2026-08-10", "end": "2026-08-12", "color": "#d97706", "type": "training" },
+  { "id": 8, "group": "Group 4", "title": "TBD Compliance Part 2",   "start": "2026-09-01", "end": "2026-09-10", "color": "",        "type": "placeholder" },
+  { "id": 9, "group": "Group 5", "title": "Product Knowledge",       "start": "2026-09-01", "end": "2026-09-05", "color": "#059669", "type": "training" },
+  { "id":10, "group": "Group 6", "title": "Customer Service 101",    "start": "2026-06-15", "end": "2026-06-19", "color": "#db2777", "type": "training" }
 ];
 
 /* ────────────────────────────────────────
@@ -1122,7 +1146,7 @@ const ITS_NORMAL = {
 const ITS_COMPACT = {
   PX_PER_DAY:   3.5, // fixed scale: 6 months ≈ 184 days × 3.5 ≈ 644px content
   ROW_H:         32,  // CSS .its-compact --row-h
-  LABEL_W:       80,  // CSS .its-compact --label-w
+  LABEL_W:      120,  // CSS .its-compact --label-w  (fits "requirementsss")
   HDR_H:         28,  // CSS .its-compact --hdr-h  (months only; no week row)
   BAR_H:         20,  // CSS .its-compact --bar-h
   SHOW_WEEKS: false,
@@ -1188,28 +1212,6 @@ function itsRange() {
 }
 
 /* ────────────────────────────────────────
-   CONFLICT DETECTION
-   Returns a Set of event IDs that have ≥1 overlap in their group.
-   ──────────────────────────────────────── */
-function itsConflicts(data) {
-  const ids = new Set();
-  ITS.GROUPS.forEach(group => {
-    const items = data.filter(d => d.group === group);
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        const aS = itsDate(items[i].start), aE = itsDate(items[i].end);
-        const bS = itsDate(items[j].start), bE = itsDate(items[j].end);
-        if (aS <= bE && bS <= aE) {        // overlap condition (inclusive)
-          ids.add(items[i].id);
-          ids.add(items[j].id);
-        }
-      }
-    }
-  });
-  return ids;
-}
-
-/* ────────────────────────────────────────
    HEADER CELL BUILDERS
    ──────────────────────────────────────── */
 
@@ -1264,23 +1266,12 @@ function itsRender() {
   const { start: vStart, totalDays } = itsRange();
   const totalPx  = totalDays * cfg.PX_PER_DAY;
   const canvasW  = cfg.LABEL_W + totalPx;
-  const conflicts = itsConflicts(itsData);
   const weekGridPx = cfg.PX_PER_DAY * 7;  // for CSS custom property on row-content
 
-  // Today offset (clamped)
+  // Today offset
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayOff = itsDays(vStart, today);
-
-  /* ── Update conflict pill ── */
-  const pill     = document.getElementById('itsConflictPill');
-  const countEl  = document.getElementById('itsConflictCount');
-  if (conflicts.size > 0) {
-    pill.removeAttribute('hidden');
-    countEl.textContent = conflicts.size;
-  } else {
-    pill.setAttribute('hidden', '');
-  }
 
   /* ── Build HTML string ── */
   let h = `<div class="its-gantt-canvas" style="min-width:${canvasW}px;position:relative;">`;
@@ -1296,12 +1287,15 @@ function itsRender() {
        </div>`
     : '';
 
+  // Suppress month label text when cell is too narrow to display it legibly
+  const MIN_MONTH_LABEL_PX = 32;
+
   h += `
     <div class="its-gantt-hdr">
       <div class="its-corner"><span class="its-corner-label">Groups</span></div>
       <div class="its-timeline-hdr" style="width:${totalPx}px;">
         <div class="its-month-row">
-          ${monthCells.map(c => `<div class="its-month-cell" style="width:${c.width}px;">${c.label}</div>`).join('')}
+          ${monthCells.map(c => `<div class="its-month-cell" style="width:${c.width}px;">${c.width >= MIN_MONTH_LABEL_PX ? c.label : ''}</div>`).join('')}
         </div>
         ${weekRowHtml}
       </div>
@@ -1309,8 +1303,8 @@ function itsRender() {
 
   /* ── Rows ── */
   ITS.GROUPS.forEach(group => {
-    const events     = itsData.filter(d => d.group === group);
-    const dotColor   = ITS.GROUP_COLORS[group] || '#4f46e5';
+    const events   = itsData.filter(d => d.group === group);
+    const dotColor = ITS.GROUP_COLORS[group] || '#4f46e5';
 
     h += `
       <div class="its-gantt-row">
@@ -1326,63 +1320,64 @@ function itsRender() {
     }
 
     events.forEach(ev => {
-      /* Calculate pixel position, clipped to view */
       const rawL  = itsDays(vStart, itsDate(ev.start));
-      const rawR  = itsDays(vStart, itsDate(ev.end)) + 1;  // end is inclusive
+      const rawR  = itsDays(vStart, itsDate(ev.end)) + 1;
       const clipL = Math.max(0, rawL);
       const clipR = Math.min(totalDays, rawR);
-      if (clipR <= 0 || clipL >= totalDays) return;  // fully outside view → skip
+      if (clipR <= 0 || clipL >= totalDays) return;
 
-      const left   = clipL * cfg.PX_PER_DAY;
-      const width  = (clipR - clipL) * cfg.PX_PER_DAY;
-      const isConf = conflicts.has(ev.id);
-      const bg     = isConf ? '#dc2626' : (ev.color || dotColor);
-      // In compact mode only show conflict badge if bar is wide enough
-      const badge  = (isConf && width > 28) ? `<span class="its-bar-badge">⚠️</span>` : '';
-      // Delete button only in normal mode (compact is read-only screenshot view)
-      const delBtn = cfg.SHOW_WEEKS
-        ? `<button class="its-bar-del" data-del="${ev.id}" title="Delete this session">✕</button>`
-        : '';
-      // In compact mode suppress the title text when the bar is too narrow to read
+      const left  = clipL * cfg.PX_PER_DAY;
+      const width = (clipR - clipL) * cfg.PX_PER_DAY;
+      const isPlaceholder = ev.type === 'placeholder';
+
+      // Placeholder bars use the striped CSS class; training bars use their custom color
+      const barStyle = isPlaceholder
+        ? `left:${left}px;width:${width}px;`
+        : `left:${left}px;width:${width}px;background:${ev.color || dotColor};`;
+
+      // Suppress text on very narrow bars in compact mode
       const barText = (!cfg.SHOW_WEEKS && width < 22)
         ? ''
         : `<span class="its-bar-text">${ev.title}</span>`;
 
+      // Delete button only in normal mode
+      const delBtn = cfg.SHOW_WEEKS
+        ? `<button class="its-bar-del" data-del="${ev.id}" title="Delete">✕</button>`
+        : '';
+
       h += `
-        <div class="its-bar${isConf ? ' is-conflict' : ''}"
-          style="left:${left}px;width:${width}px;background:${bg};"
+        <div class="its-bar${isPlaceholder ? ' is-placeholder' : ''}"
+          style="${barStyle}"
           data-id="${ev.id}"
-          data-title="${ev.title.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+          data-title="${ev.title.replace(/"/g,'&quot;').replace(/'/g,'&#39;')}"
           data-group="${ev.group}"
           data-start="${ev.start}"
           data-end="${ev.end}"
+          data-type="${ev.type || 'training'}"
         >
-          ${barText}
-          ${badge}
-          ${delBtn}
+          ${barText}${delBtn}
         </div>`;
     });
 
-    h += `</div></div>`; // .its-row-content  .its-gantt-row
+    h += `</div></div>`;
   });
 
   /* ── Today line ── */
   if (todayOff >= 0 && todayOff <= totalDays) {
-    const lineX    = cfg.LABEL_W + todayOff * cfg.PX_PER_DAY;
-    const lineH    = cfg.HDR_H + ITS.GROUPS.length * cfg.ROW_H;
+    const lineX = cfg.LABEL_W + todayOff * cfg.PX_PER_DAY;
+    const lineH = cfg.HDR_H + ITS.GROUPS.length * cfg.ROW_H;
     h += `
       <div class="its-today-line" style="left:${lineX}px;height:${lineH}px;">
         <div class="its-today-marker">TODAY</div>
       </div>`;
   }
 
-  h += `</div>`; // .its-gantt-canvas
+  h += `</div>`;
 
   /* ── Inject ── */
   const wrap = document.getElementById('itsGanttWrap');
   wrap.innerHTML = h;
 
-  /* ── Attach bar event listeners (tooltips work in both modes) ── */
   wrap.querySelectorAll('.its-bar').forEach(bar => {
     bar.addEventListener('mouseenter', itsShowTip);
     bar.addEventListener('mousemove',  itsMoveTip);
@@ -1395,7 +1390,6 @@ function itsRender() {
     });
   });
 
-  /* ── Update JSON output (hidden in compact, but keep it in sync) ── */
   const jsonEl = document.getElementById('itsJsonOutput');
   if (jsonEl) jsonEl.value = JSON.stringify(itsData, null, 2);
 }
@@ -1406,24 +1400,28 @@ function itsRender() {
 const itsTip = document.getElementById('itsTooltip');
 
 function itsShowTip(e) {
-  const bar    = e.currentTarget;
-  const id     = parseInt(bar.getAttribute('data-id'), 10);
-  const ev     = itsData.find(d => d.id === id);
+  const bar  = e.currentTarget;
+  const id   = parseInt(bar.getAttribute('data-id'), 10);
+  const ev   = itsData.find(d => d.id === id);
   if (!ev) return;
 
-  const dur      = itsDays(itsDate(ev.start), itsDate(ev.end)) + 1;
-  const isConf   = itsConflicts(itsData).has(id);
-  const confHtml = isConf
-    ? `<div class="its-tt-conflict">⚠️ This session has a scheduling conflict!</div>`
+  const dur         = itsDays(itsDate(ev.start), itsDate(ev.end)) + 1;
+  const isPlaceholder = ev.type === 'placeholder';
+  const typeLabel   = isPlaceholder ? '🔲 Placeholder Event' : '📅 Training Session';
+  const typeBadge   = isPlaceholder
+    ? `<div style="margin-top:9px;padding:5px 8px;background:rgba(249,115,22,0.18);border:1px solid rgba(249,115,22,0.4);border-radius:4px;color:#fed7aa;font-size:11.5px;font-weight:700;">
+         🔲 Dates not yet confirmed
+       </div>`
     : '';
 
   itsTip.innerHTML = `
     <div class="its-tt-title">${ev.title}</div>
+    <div class="its-tt-row"><span class="its-tt-key">Type</span><span class="its-tt-val">${typeLabel}</span></div>
     <div class="its-tt-row"><span class="its-tt-key">Group</span><span class="its-tt-val">${ev.group}</span></div>
     <div class="its-tt-row"><span class="its-tt-key">Starts</span><span class="its-tt-val">${ev.start}</span></div>
     <div class="its-tt-row"><span class="its-tt-key">Ends</span><span class="its-tt-val">${ev.end}</span></div>
     <div class="its-tt-row"><span class="its-tt-key">Duration</span><span class="its-tt-val">${dur} day${dur !== 1 ? 's' : ''}</span></div>
-    ${confHtml}
+    ${typeBadge}
   `;
   itsTip.removeAttribute('hidden');
   itsMoveTip(e);
@@ -1457,7 +1455,6 @@ function itsDelete(id) {
 const itsOverlay = document.getElementById('itsOverlay');
 
 function itsOpenModal() {
-  /* Reset form */
   const today    = new Date();
   const nextWeek = new Date(today);
   nextWeek.setDate(nextWeek.getDate() + 7);
@@ -1466,7 +1463,8 @@ function itsOpenModal() {
   document.getElementById('itsStart').value = itsFmt(today);
   document.getElementById('itsEnd').value   = itsFmt(nextWeek);
   document.getElementById('itsColor').value = '#4f46e5';
-  /* Clear validation messages */
+  document.getElementById('itsTypeTraining').checked = true;
+  document.getElementById('itsColorField').style.display = '';
   ['Title','Group','Start','End'].forEach(f => {
     document.getElementById('itsErr' + f).textContent = '';
   });
@@ -1478,46 +1476,30 @@ function itsCloseModal() {
   itsOverlay.setAttribute('hidden', '');
 }
 
-/** Validate & submit the form. */
 function itsSubmit() {
-  const title  = document.getElementById('itsTitle').value.trim();
-  const group  = document.getElementById('itsGroup').value;
-  const start  = document.getElementById('itsStart').value;
-  const end    = document.getElementById('itsEnd').value;
-  const color  = document.getElementById('itsColor').value;
-  let   valid  = true;
+  const title = document.getElementById('itsTitle').value.trim();
+  const group = document.getElementById('itsGroup').value;
+  const start = document.getElementById('itsStart').value;
+  const end   = document.getElementById('itsEnd').value;
+  const type  = document.querySelector('input[name="itsType"]:checked').value;
+  const color = type === 'training' ? document.getElementById('itsColor').value : '';
+  let   valid = true;
 
-  /* Clear previous errors */
   ['Title','Group','Start','End'].forEach(f => {
     document.getElementById('itsErr' + f).textContent = '';
   });
 
-  /* Validate */
-  if (!title) {
-    document.getElementById('itsErrTitle').textContent = 'Title is required.';
-    valid = false;
-  }
-  if (!group) {
-    document.getElementById('itsErrGroup').textContent = 'Please select a group.';
-    valid = false;
-  }
-  if (!start) {
-    document.getElementById('itsErrStart').textContent = 'Start date is required.';
-    valid = false;
-  }
-  if (!end) {
-    document.getElementById('itsErrEnd').textContent = 'End date is required.';
-    valid = false;
-  }
+  if (!title) { document.getElementById('itsErrTitle').textContent = 'Title is required.'; valid = false; }
+  if (!group) { document.getElementById('itsErrGroup').textContent = 'Please select a group.'; valid = false; }
+  if (!start) { document.getElementById('itsErrStart').textContent = 'Start date is required.'; valid = false; }
+  if (!end)   { document.getElementById('itsErrEnd').textContent   = 'End date is required.';   valid = false; }
   if (start && end && end < start) {
     document.getElementById('itsErrEnd').textContent = 'End date must be on or after start date.';
     valid = false;
   }
-
   if (!valid) return;
 
-  /* Add to data */
-  itsData.push({ id: itsNextId++, group, title, start, end, color });
+  itsData.push({ id: itsNextId++, group, title, start, end, color, type });
   itsCloseModal();
   itsRender();
 }
@@ -1527,6 +1509,14 @@ document.getElementById('itsAddBtn').addEventListener('click', itsOpenModal);
 document.getElementById('itsModalX').addEventListener('click', itsCloseModal);
 document.getElementById('itsModalCancel').addEventListener('click', itsCloseModal);
 document.getElementById('itsModalSubmit').addEventListener('click', itsSubmit);
+
+/* Toggle color picker based on event type selection */
+document.querySelectorAll('input[name="itsType"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isTraining = document.getElementById('itsTypeTraining').checked;
+    document.getElementById('itsColorField').style.display = isTraining ? '' : 'none';
+  });
+});
 
 /* Close on backdrop click */
 itsOverlay.addEventListener('click', e => {
