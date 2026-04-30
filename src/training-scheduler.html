@@ -946,14 +946,14 @@
     </div>
     <!-- View mode toggle -->
     <div class="its-view-toggle" role="group" aria-label="View mode">
-      <button class="its-vtog-btn active" id="itsVtogNormal" title="Full detail view">
+      <button class="its-vtog-btn" id="itsVtogNormal" title="Full detail view">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <rect x="1" y="1" width="11" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
           <rect x="1" y="8" width="11" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/>
         </svg>
         Normal
       </button>
-      <button class="its-vtog-btn" id="itsVtogCompact" title="Compact screenshot view">
+      <button class="its-vtog-btn active" id="itsVtogCompact" title="Compact screenshot view">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <rect x="1" y="1.5" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
           <rect x="1" y="5.5" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.3"/>
@@ -1105,7 +1105,7 @@ const trainingData = [
 /* ────────────────────────────────────────
    VIEW STATE — compact is NOT persisted
    ──────────────────────────────────────── */
-let itsCompact = false;   // false = normal (default on every page load)
+let itsCompact = true;    // true = compact (default on every page load)
 
 /* ────────────────────────────────────────
    CONFIG — two presets; values must stay
